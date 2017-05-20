@@ -1,0 +1,284 @@
+# -*- sh -*-
+
+# Sourced by ~/.bashrc, ~/.zshrc, and possibly other files.
+# If at all possible, functions should be sh-compatible.
+
+# man bash has this to say about aliases and functions:
+
+#     There is no mechanism for using arguments in the replacement
+#     text [of an alias].  If arguments are needed, a shell function
+#     should be used[...]  For almost every purpose, aliases are
+#     superseded by shell functions.
+
+# Parts of the functions file are split off and stored here:
+SHCONFIG=$HOME/.sh.d
+
+. $SHCONFIG/lsfunctions
+. $SHCONFIG/gitfunctions
+
+if which apt-get >/dev/null 2>&1; then
+. $SHCONFIG/aptfunctions
+fi
+
+if which yum >/dev/null 2>&1; then
+    . $SHCONFIG/yumfunctions
+fi
+
+if which pacman >/dev/null 2>&1; then
+    . $SHCONFIG/pmfunctions
+fi
+
+# `al alias command` sets an alias in .aliases and in the current
+# session; `alg alias command` sets a zsh global alias in .zsh_aliases
+# and current session
+al () {
+    if [[ $1 && $2 ]]; then
+        echo "alias $1=\"$2\"" >> ~/.aliases
+        alias $1="$2"
+    fi
+}
+
+alg () {
+    if [[ $1 && $2 ]]; then
+        echo "alias -g $1=$2" >> ~/.zsh_aliases
+        alias -g $1=$2
+    fi
+}
+
+# # some one-liners
+c () { clear; }
+chx () { chmod +x "$@"; }
+df () { command df -h; }
+label () { echo -ne "\e]0;$1\a"; }
+mix () { alsamixer; }
+nao () { telnet nethack.alt.org; }
+pdf () { pdflatex "$@" && rm `dirname "$@"`/*.{aux,log}; }
+popular () { awk '{ print $1 }' $HISTFILE | sort | uniq -c | sort -rn | less; }
+py () { python "$@"; }
+sdf () { ssh jk564@sdf.org; }
+srcf () { ssh jk564@shell.srcf.net; }
+su () { command su -p; }
+tetris () { tetris-bsd; }
+twenex () { ssh twenex@sdf.org; }
+udg () { sudo update-grub; }
+up () { for i in {1..$1}; do cd ..; done }
+vms () { ssh jk564@jack.vistech.net; }
+myshell () { echo $0; }
+dorf () { /home/joe/media/bin/df_linux/df; }
+px () { ping -c 3 example.com; }
+
+# cd
+cdl () { cd "$@" && clear && ls -l --group-directories-first; }
+mcd () { mkdir -p "$@" && cd $_; }
+
+path () { echo $PATH | sed s/:/\\n/g; }
+
+# power management
+sd () {
+    if which systemctl >/dev/null; then
+        sudo systemctl shutdown
+    else
+        sudo shutdown -h now
+    fi
+}
+
+rs () {
+    if which systemctl >/dev/null; then
+        sudo systemctl restart
+    else
+        sudo shutdown -r now
+    fi
+}
+
+# startx
+x () {
+    if [ `tty | cut -c 6-8`  = "tty" ]; then
+        startx
+    else
+        echo "Not at TTY: Cannot startx."
+    fi
+}
+
+
+# volume control
+volup () { amixer sset Master,0 5+; }
+voldown () { amixer sset Master,0 5-; }
+
+# xall: chmod +x every file in a folder
+xall () {
+    for i in *; do
+        chmod +x $i
+    done
+}
+
+# print the first line of a file other than the #! which has # as the
+# first non-whitespace character
+docstring () {
+    if [ -r $1 ]; then
+        grep -m 1 '[ \t]*#' $1
+    fi
+}
+
+# prefer more modern versions of standard applications
+htop () {
+    if command which htop > /dev/null 2>&1; then
+        command htop
+    else
+        command top
+    fi
+}
+vim () {
+    if command which vim > /dev/null 2>&1; then
+        command vim "$@"
+    else
+        command vi "$@"
+    fi
+}
+top () {
+    if command which htop > /dev/null 2>&1; then
+        command htop
+    else
+        command top
+    fi
+}
+vi () {
+    if command which vim > /dev/null 2>&1; then
+        command vim "$@"
+    else
+        command vi "$@"
+    fi
+}
+
+# handy uncompression function intelligently uncompresses files with
+# extensions from various compression algorithms
+extract () {
+    if [ -f "$1" ] ; then
+        case "$1" in
+            *.tar.bz2)   tar xvjf "$1"    ;;
+            *.tar.gz)    tar xvzf "$1"    ;;
+            *.tar.xz)    tar xfJ "$1"     ;;
+            *.tar)       tar xvf "$1"     ;;
+            *.tbz2)      tar xvjf "$1"    ;;
+            *.tgz)       tar xvzf "$1"    ;;
+            *.bz2)       bunzip2 "$1"     ;;
+            *.rar)       rar x "$1"       ;;
+            *.cbr)       rar x "$1"       ;;
+            *.gz)        gunzip "$1"      ;;
+            *.xz)        unxz "$1"        ;;
+            *.zip)       unzip "$1"       ;;
+            *.cbz)       unzip "$1"       ;;
+            *.Z)         uncompress "$1"  ;;
+            *.7z)        7z x "$1"        ;;
+            *)           echo "don't know how to extract '$1'..." ;;
+        esac
+    else
+        echo "Error: '$1' is not a valid file!"
+    fi
+}
+
+# pack is like extract in reverse...
+pack () {
+    if [ $# -lt 2 ]; then
+        echo -e "\npack usage:"
+        echo -e "\tpack archive_name file1 file2 ... fileN"
+        echo -e "\tpack creates archive of files\n"
+        echo -e "file types supported:"
+        echo -e "\t .tar.bz2; .tar.gz; .tgz; .zip; .xpi; .7z\n"
+    else
+        DEST=$1
+        shift
+
+        case $DEST in
+            *.tar.bz2) tar -cvjf $DEST "$@" ;;
+            *.tar.gz) tar -cvzf $DEST "$@" ;;
+            *.tgz) tar -cvzf $DEST "$@" ;;
+            *.zip) zip -r $DEST "$@" ;;
+            *) echo "Error: Unknown file type - $DEST" ;;
+        esac
+    fi
+}
+
+# mtoc prints a table of contents for a man page. Handy for stupidly
+# long pages like bash and fvwm
+mtoc () { man --ascii "$1" 2>/dev/null | awk '
+            BEGIN { a[""]++ }
+            /^\s{0,4}\S/ && !($0 in a) { a[$0]++ ; b[i++]=$0 }
+            END { for (j=0 ; j<i ; j++) print b[j] } '
+        }
+
+# cd and ls in one
+cl() {
+    local dir="$1"
+    local dir="${dir:=$HOME}"
+    if [[ -d "$dir" ]]; then
+        cd "$dir" >/dev/null; ls
+    else
+        echo "bash: cl: $dir: Directory not found"
+    fi
+}
+
+# Detailed information on an IP address or hostname
+ipif() {
+    if grep -P "(([1-9]\d{0,2})\.){3}(?2)" <<< "$1"; then
+    curl ipinfo.io/"$1"
+    else
+    ipawk=($(host "$1" | awk '/address/ { print $NF }'))
+    curl ipinfo.io/${ipawk[1]}
+    fi
+    echo
+}
+
+# Optimizing images for web, usage: $ smartresize input.jpg 900 output_dir
+smartresize() {
+   mogrify -path $3 -filter Triangle -define filter:support=2 -thumbnail $2 -unsharp 0.25x0.08+8.3+0.045 -dither None -posterize 136 -quality 82 -define jpeg:fancy-upsampling=off -define png:compression-filter=5 -define png:compression-level=9 -define png:compression-strategy=1 -define png:exclude-chunk=all -interlace none -colorspace sRGB $1
+}
+
+# Calculator
+calc() {
+    echo "scale=3;$@" | bc -l
+}
+
+# Simple note taker
+note () {
+    # if file doesn't exist, create it
+    if [[ ! -f $HOME/.notes ]]; then
+        touch "$HOME/.notes"
+    fi
+
+    if ! (($#)); then
+        # no arguments, print file
+        cat "$HOME/.notes"
+    elif [[ "$1" == "-c" ]]; then
+        # clear file
+        printf "%s" > "$HOME/.notes"
+    else
+        # add all arguments to file
+        printf "%s\n" "$*" >> "$HOME/.notes"
+    fi
+}
+
+# Simple task utility
+todo() {
+    if [[ ! -f $HOME/.todo ]]; then
+        touch "$HOME/.todo"
+    fi
+
+    if ! (($#)); then
+        cat "$HOME/.todo"
+    elif [[ "$1" == "-l" ]]; then
+        nl -b a "$HOME/.todo"
+    elif [[ "$1" == "-c" ]]; then
+        > $HOME/.todo
+    elif [[ "$1" == "-r" ]]; then
+        nl -b a "$HOME/.todo"
+        eval printf %.0s- '{1..'"${COLUMNS:-$(tput cols)}"\}; echo
+        read -p "Type a number to remove: " number
+        sed -i ${number}d $HOME/.todo "$HOME/.todo"
+    else
+        printf "%s\n" "$*" >> "$HOME/.todo"
+    fi
+}
+
+#
+# More cool functions: https://bbs.archlinux.org/viewtopic.php?id=30155
+#

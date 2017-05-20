@@ -1,0 +1,3 @@
+# -*- sh -*-
+
+pm () { sudo pacman "$@"; }

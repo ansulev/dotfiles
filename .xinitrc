@@ -27,14 +27,15 @@ fi
 
 # set keyboard repead rate
 xset r rate 280 30
-# per window kbd layout
-perWindowLayoutD
 # adjust backlight
-xbacklight -set 15
+#xbacklight -set 15
 
 # gnome-keyring
-eval $(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)
-export SSH_AUTH_SOCK
+#eval $(/usr/bin/gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)
+#export SSH_AUTH_SOCK
+
+# polkit-gnome
+#/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 
 # openrc start openbox session
 #exec ck-launch-session dbus-launch --sh-syntax --exit-with-session openbox-session > ~/.ob_session.log 2>&1

@@ -63,7 +63,6 @@ export VMWARE_USE_SHIPPED_LIBS='yes'
 # Wine
 export WINEPREFIX=$HOME/.config/wine/
 export WINEARCH=win32
-export WINEDLLOVERRIDES="winemenubuilder.exe=d"
 
 # History Options
 shopt -s histappend # append to the history file, don't overwrite it
@@ -163,13 +162,15 @@ alias yus='yaourt -S'
 alias yup='yaourt -Sua'
 
 # Privileges escalation
-alias rc-update='sudo rc-update'
-alias rc-service='sudo rc-service'
-alias service='sudo service'
 alias systemctl='sudo systemctl'
 alias pms='sudo pm-suspend'
 alias reboot='sudo reboot'
 alias halt='sudo poweroff'
+
+# Networking
+alias nmenu='sudo wifi-menu'
+alias wconn='sudo netctl start home-wifi'
+alias ddos='sudo hping3 -c 10000 -d 120 -S -w 64 -p 6881 --flood --rand-source'
 
 # Stats
 alias svcstat="systemctl list-units --state=running | grep -v systemd | awk '{print $1}' | grep service"
@@ -182,119 +183,8 @@ alias inox='inox --disk-cache-dir=/tmp/chromium'
 # Sync time
 alias stime='sudo ntpd -qg; sudo hwclock -w'
 
+# Mount wdpass
+alias wdpass='sudo cryptsetup luksOpen --key-file=/crypto_keyfile.bin /dev/sdb1 wdpass ; sudo mount -o compress=lzo,autodefrag /dev/mapper/wdpass /mnt/wdpass'
+
 # Handy functions
-#source ~/.sh.d/functions
-
-# Detailed information on an IP address or hostname
-ipif() {
-    if grep -P "(([1-9]\d{0,2})\.){3}(?2)" <<< "$1"; then
-    curl ipinfo.io/"$1"
-    else
-    ipawk=($(host "$1" | awk '/address/ { print $NF }'))
-    curl ipinfo.io/${ipawk[1]}
-    fi
-    echo
-}
-
-# Optimizing images for web, usage: $ smartresize input.jpg 900 output_dir
-smartresize() {
-   mogrify -path $3 -filter Triangle -define filter:support=2 -thumbnail $2 -unsharp 0.25x0.08+8.3+0.045 -dither None -posterize 136 -quality 82 -define jpeg:fancy-upsampling=off -define png:compression-filter=5 -define png:compression-level=9 -define png:compression-strategy=1 -define png:exclude-chunk=all -interlace none -colorspace sRGB $1
-}
-
-# Extract
-extract() {
-    local c e i
-
-    (($#)) || return
-
-    for i; do
-        c=''
-        e=1
-
-        if [[ ! -r $i ]]; then
-            echo "$0: file is unreadable: \`$i'" >&2
-            continue
-        fi
-
-        case $i in
-            *.t@(gz|lz|xz|b@(2|z?(2))|a@(z|r?(.@(Z|bz?(2)|gz|lzma|xz)))))
-                   c=(bsdtar xvf);;
-            *.7z)  c=(7z x);;
-            *.Z)   c=(uncompress);;
-            *.bz2) c=(bunzip2);;
-            *.exe) c=(cabextract);;
-            *.gz)  c=(gunzip);;
-            *.rar) c=(unrar x);;
-            *.xz)  c=(unxz);;
-            *.zip) c=(unzip);;
-            *)     echo "$0: unrecognized file extension: \`$i'" >&2
-                   continue;;
-        esac
-
-        command "${c[@]}" "$i"
-        ((e = e || $?))
-    done
-    return "$e"
-}
-
-# cd and ls in one
-cl() {
-    local dir="$1"
-    local dir="${dir:=$HOME}"
-    if [[ -d "$dir" ]]; then
-        cd "$dir" >/dev/null; ls
-    else
-        echo "bash: cl: $dir: Directory not found"
-    fi
-}
-
-# Calculator
-calc() {
-    echo "scale=3;$@" | bc -l
-}
-
-# Simple note taker
-note () {
-    # if file doesn't exist, create it
-    if [[ ! -f $HOME/.notes ]]; then
-        touch "$HOME/.notes"
-    fi
-
-    if ! (($#)); then
-        # no arguments, print file
-        cat "$HOME/.notes"
-    elif [[ "$1" == "-c" ]]; then
-        # clear file
-        printf "%s" > "$HOME/.notes"
-    else
-        # add all arguments to file
-        printf "%s\n" "$*" >> "$HOME/.notes"
-    fi
-}
-
-# Simple task utility
-todo() {
-    if [[ ! -f $HOME/.todo ]]; then
-        touch "$HOME/.todo"
-    fi
-
-    if ! (($#)); then
-        cat "$HOME/.todo"
-    elif [[ "$1" == "-l" ]]; then
-        nl -b a "$HOME/.todo"
-    elif [[ "$1" == "-c" ]]; then
-        > $HOME/.todo
-    elif [[ "$1" == "-r" ]]; then
-        nl -b a "$HOME/.todo"
-        eval printf %.0s- '{1..'"${COLUMNS:-$(tput cols)}"\}; echo
-        read -p "Type a number to remove: " number
-        sed -i ${number}d $HOME/.todo "$HOME/.todo"
-    else
-        printf "%s\n" "$*" >> "$HOME/.todo"
-    fi
-}
-
-#
-# More cool functions: https://bbs.archlinux.org/viewtopic.php?id=30155
-#
-
+source ~/.sh.d/functions
